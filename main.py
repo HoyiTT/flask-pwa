@@ -7,6 +7,7 @@ import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_cors import CORS
 import psutil
+import flask_monitoringdashboard as dashboard
 
 app = Flask(__name__)
 CORS(app)
@@ -92,5 +93,9 @@ def index():
 def manage():
     system_info = get_system_info()
     return render_template('manage.html', system_info=system_info)
+
 if __name__ == '__main__':
+    dashboard.bind(app)
     app.run(debug=True, host='0.0.0.0', port=5001)
+
+    
