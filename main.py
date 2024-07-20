@@ -6,6 +6,7 @@ from collections import defaultdict
 import atexit
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask_cors import CORS
+import psutil
 
 app = Flask(__name__)
 CORS(app)
@@ -47,6 +48,22 @@ scheduler.start()
 
 atexit.register(lambda: scheduler.shutdown())
 
+def get_system_info():
+    cpu_percent = psutil.cpu_percent(interval=1)
+    memory_info = psutil.virtual_memory()
+    disk_info = psutil.disk_usage('/')
+
+    system_info = {
+        'cpu_percent': cpu_percent,
+        'memory_total': memory_info.total,
+        'memory_used': memory_info.used,
+        'memory_percent': memory_info.percent,
+        'disk_total': disk_info.total,
+        'disk_used': disk_info.used,
+        'disk_percent': disk_info.percent,
+    }
+    return system_info
+
 @app.route('/manifest.json')
 def serve_manifest():
     return send_file('manifest.json', mimetype='application/manifest+json')
@@ -70,5 +87,10 @@ def index():
 
     return render_template('index.html', days=days, day=day_offset, todayDate=todayDate, defaultdays=defaultdays, todayBreakfast=breakfast, todayLunch=lunch, todayDinner=dinner, todaySnack=snack, todayVisitors=today_visitors, totalVisitors=total_visitors)
 
+
+@app.route('/manage')
+def manage():
+    system_info = get_system_info()
+    return render_template('manage.html', system_info=system_info)
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5001)

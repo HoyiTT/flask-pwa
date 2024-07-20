@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Monitoring</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        .system-info {
+            margin-bottom: 20px;
+        }
+        .system-info h2 {
+            margin: 0;
+        }
+        .system-info p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Server Monitoring</h1>
+        <div class="system-info">
+            <h2>CPU Usage</h2>
+            <p>{{ system_info.cpu_percent }}%</p>
+        </div>
+        <div class="system-info">
+            <h2>Memory Usage</h2>
+            <p>Total: {{ system_info.memory_total / (1024 * 1024) | round(2) }} MB</p>
+            <p>Used: {{ system_info.memory_used / (1024 * 1024) | round(2) }} MB ({{ system_info.memory_percent }}%)</p>
+        </div>
+        <div class="system-info">
+            <h2>Disk Usage</h2>
+            <p>Total: {{ system_info.disk_total / (1024 * 1024 * 1024) | round(2) }} GB</p>
+            <p>Used: {{ system_info.disk_used / (1024 * 1024 * 1024) | round(2) }} GB ({{ system_info.disk_percent }}%)</p>
+        </div>
+    </div>
+</body>
+</html>
