@@ -131,12 +131,16 @@
             <div id="menu-list">
                 <div class="container">
                     <form action="/" method="get">
-                        <select name="day" aria-label="요일 선택">
-                            {% for index in range(days|length) %}
-                            <option value="{{ index }}" {% if index == day %}selected{% endif %}>{{ days[index] }}</option>
-                            {% endfor %}
-                        </select>
-                        <button type="submit">요일로 메뉴 보기</button>
+                        <div class="day-select" style="display: flex; align-items: center; justify-content: center;">
+                            요일별 메뉴 : 
+                            <select name="day" aria-label="요일별 선택" onchange="this.form.submit()" style="margin-left: 10px;">
+                                {% for index in range(days|length) %}
+                                <option value="{{ index }}" {% if index == day %}selected{% endif %}>{{ days[index] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <!-- 버튼을 제거하거나 주석 처리할 수 있습니다 -->
+                        <!-- <button type="submit">요일로 메뉴 보기</button> -->
                     </form>
                     <div>
                         <p>오늘은 {{ todayDate }} {{defaultdays}}입니다.</p>
