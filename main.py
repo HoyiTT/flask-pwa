@@ -14,7 +14,19 @@ CORS(app)
 
 # 접속자 수를 저장할 딕셔너리
 visitor_count = defaultdict(int)
-total_visitors = 0
+
+# 총 방문자 수를 저장할 파일 경로
+TOTAL_VISITORS_FILE = 'total_visitors.txt'
+
+# 총 방문자 수를 파일에서 읽어 초기화
+def load_total_visitors():
+    try:
+        with open(TOTAL_VISITORS_FILE, 'r') as f:
+            return int(f.read().strip())
+    except FileNotFoundError:
+        return 0
+
+total_visitors = load_total_visitors()
 
 def fetch_menu(url, day_offset):
     try:
@@ -34,20 +46,40 @@ def fetch_menu(url, day_offset):
     except IndexError:
         return "데이터가 없습니다.", "", "", ""
 
-def save_daily_visitors():
+@app.route('/manifest.json')
+def serve_manifest():
+    return send_file('manifest.json', mimetype='application/manifest+json')
+
+@app.route('/static/sw.js')
+def serve_sw():
+    return send_file('static/sw.js', mimetype='application/javascript')
+
+@app.route('/')
+def index():
     global total_visitors
+    days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
+    day_offset = request.args.get('day', default=(int(datetime.today().weekday())+1) % 7, type=int)
+    url = "http://www.ggdorm.or.kr/home/main_kr/main.php?ctt=../contents_kr/m_5_5&mc=1|5|1"
+    breakfast, lunch, dinner, snack = fetch_menu(url, day_offset)
     todayDate = datetime.today().strftime('%Y-%m-%d')
+    defaultdays = days[(int(datetime.today().weekday())+1) % 7]
+
+    # 오늘 날짜의 접속자 수 증가
+    visitor_count[todayDate] += 1
     today_visitors = visitor_count[todayDate]
-    with open('daily_visitors.txt', 'a') as f:
-        f.write(f"{todayDate}: {today_visitors}\n")
-    total_visitors += today_visitors
-    visitor_count.clear()
 
-scheduler = BackgroundScheduler()
-scheduler.add_job(func=save_daily_visitors, trigger="cron", hour=0, minute=0)
-scheduler.start()
+    # 총 방문자 수 증가 및 파일에 저장
+    total_visitors += 1
+    with open(TOTAL_VISITORS_FILE, 'w') as f:
+        f.write(str(total_visitors))
 
-atexit.register(lambda: scheduler.shutdown())
+    return render_template('index.html', days=days, day=day_offset, todayDate=todayDate, defaultdays=defaultdays, todayBreakfast=breakfast, todayLunch=lunch, todayDinner=dinner, todaySnack=snack, todayVisitors=today_visitors, totalVisitors=total_visitors)
+
+
+@app.route('/manage')
+def manage():
+    system_info = get_system_info()
+    return render_template('manage.html', system_info=system_info)
 
 def get_system_info():
     cpu_percent = psutil.cpu_percent(interval=1)
@@ -65,37 +97,6 @@ def get_system_info():
     }
     return system_info
 
-@app.route('/manifest.json')
-def serve_manifest():
-    return send_file('manifest.json', mimetype='application/manifest+json')
-
-@app.route('/static/sw.js')
-def serve_sw():
-    return send_file('static/sw.js', mimetype='application/javascript')
-
-@app.route('/')
-def index():
-    days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']
-    day_offset = request.args.get('day', default=(int(datetime.today().weekday())+1) % 7, type=int)
-    url = "http://www.ggdorm.or.kr/home/main_kr/main.php?ctt=../contents_kr/m_5_5&mc=1|5|1"
-    breakfast, lunch, dinner, snack = fetch_menu(url, day_offset)
-    todayDate = datetime.today().strftime('%Y-%m-%d')
-    defaultdays = days[(int(datetime.today().weekday())+1) % 7]
-
-    # 오늘 날짜의 접속자 수 증가
-    visitor_count[todayDate] += 1
-    today_visitors = visitor_count[todayDate]
-
-    return render_template('index.html', days=days, day=day_offset, todayDate=todayDate, defaultdays=defaultdays, todayBreakfast=breakfast, todayLunch=lunch, todayDinner=dinner, todaySnack=snack, todayVisitors=today_visitors, totalVisitors=total_visitors)
-
-
-@app.route('/manage')
-def manage():
-    system_info = get_system_info()
-    return render_template('manage.html', system_info=system_info)
-
 if __name__ == '__main__':
     dashboard.bind(app)
     app.run(debug=True, host='0.0.0.0', port=5001)
-
-    
